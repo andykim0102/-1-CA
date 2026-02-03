@@ -50,7 +50,7 @@ if uploaded_file is not None and api_key:
     st.success("파일 업로드 완료! 분석을 시작합니다...")
     
     # PDF를 이미지로 변환 (300dpi 고화질)
-    images = convert_from_bytes(uploaded_file.read(), dpi=300)
+    images = convert_from_bytes(uploaded_file.read(), dpi=150)
     
     for page_num, img in enumerate(images):
         st.markdown(f"## 📄 {page_num + 1} 페이지 분석")
@@ -81,4 +81,5 @@ if uploaded_file is not None and api_key:
                         st.error(f"에러 발생: {e}")
 
 elif not api_key:
+
     st.warning("왼쪽 사이드바에 API Key를 먼저 입력해주세요.")

@@ -16,8 +16,9 @@ with st.sidebar:
         genai.configure(api_key=api_key)
     
     st.info("💡 PDF를 업로드하면 자동으로 고화질 분할되어 분석됩니다.")
+    st.warning("⚠️ 정확도를 위해 'Pro' 모델을 사용하므로, 속도가 느립니다 (한 페이지당 약 2분).")
 
-# 3. 프롬프트 설정 (우리가 합의한 최강 프롬프트)
+# 3. 프롬프트 설정
 SYSTEM_PROMPT = """
 **[역할]** 너는 수능 화학 I 만점 강사야. 
 제공된 이미지 조각은 고난도 모의고사 문제의 일부야.
@@ -32,7 +33,7 @@ SYSTEM_PROMPT = """
 """
 
 def get_gemini_response(image):
-    # 👇 [수정 1] 모델 이름을 가장 최신 Pro 버전으로 명시합니다. (404 해결)
+    # 최신 Pro 모델 사용 (404 에러 방지용 latest 태그)
     model = genai.GenerativeModel('gemini-1.5-pro-latest')
     
     # 정확도를 위해 창의성 0 설정
@@ -50,17 +51,15 @@ st.title("🧪 화학 I 서바이벌 모의고사 자동 분석기")
 uploaded_file = st.file_uploader("PDF 시험지를 업로드하세요", type=["pdf"])
 
 if uploaded_file is not None and api_key:
-    st.success("파일 업로드 완료! 분석을 시작합니다...")
+    st.success("파일 업로드 완료! 분석을 시작합니다... (시간이 좀 걸립니다)")
     
-    # PDF를 이미지로 변환 (300dpi 고화질)
+    # 메모리 오류 방지를 위해 150 DPI 설정
     images = convert_from_bytes(uploaded_file.read(), dpi=150)
     
     for page_num, img in enumerate(images):
         st.markdown(f"## 📄 {page_num + 1} 페이지 분석")
         
         # [자동 분할 로직] 
-        # 시험지는 보통 2단 구성이므로, 정확도를 위해 4등분(좌상, 우상, 좌하, 우하)합니다.
-        # 이렇게 하면 해상도가 4배 높아져서 '점'이 잘 보입니다.
         width, height = img.size
         crops = [
             (img.crop((0, 0, width//2, height//2)), "좌측 상단 (1/4)"),
@@ -69,25 +68,24 @@ if uploaded_file is not None and api_key:
             (img.crop((width//2, height//2, width, height)), "우측 하단 (4/4)")
         ]
         
-        cols = st.columns(2) # 2열로 보여주기
+        cols = st.columns(2) # 2열 레이아웃
         
+        # 여기서 IndentationError가 났던 부분입니다. 줄 간격을 정확히 맞췄습니다.
         for i, (cropped_img, label) in enumerate(crops):
-        with cols[i % 2]:
-            st.image(cropped_img, caption=f"P{page_num+1} - {label}", use_column_width=True)
-            
-            with st.spinner(f"🔍 {label} 정밀 분석 중... (Pro 모델 쿨타임 준수 중)"):
-                try:
-                    result = get_gemini_response(cropped_img)
-                    st.markdown(f"**🤖 분석 결과:**\n\n{result}")
-                    st.divider()
-                    
-                    # 👇 [핵심 추가] 무료 계정의 '1분당 2회' 제한을 피하기 위해 35초씩 쉽니다.
-                    # 조금 느리지만, 에러 없이 무조건 Pro로 풉니다.
-                    time.sleep(35) 
-                    
-                except Exception as e:
-                    st.error(f"에러 발생: {e}")
+            with cols[i % 2]:
+                st.image(cropped_img, caption=f"P{page_num+1} - {label}", use_column_width=True)
+                
+                with st.spinner(f"🔍 {label} 정밀 분석 중... (Pro 모델 쿨타임 준수 중)"):
+                    try:
+                        result = get_gemini_response(cropped_img)
+                        st.markdown(f"**🤖 분석 결과:**\n\n{result}")
+                        st.divider()
+                        
+                        # [핵심] 무료 계정 제한(RPM) 회피를 위한 30초 대기
+                        time.sleep(30)
+                        
+                    except Exception as e:
+                        st.error(f"에러 발생: {e}")
+
 elif not api_key:
-
     st.warning("왼쪽 사이드바에 API Key를 먼저 입력해주세요.")
-

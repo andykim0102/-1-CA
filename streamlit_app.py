@@ -3,6 +3,7 @@ import google.generativeai as genai
 from pdf2image import convert_from_bytes
 import io
 from PIL import Image
+import time
 
 # 1. 페이지 설정
 st.set_page_config(page_title="화학I 킬러 문항 판독기", layout="wide")
@@ -31,8 +32,10 @@ SYSTEM_PROMPT = """
 """
 
 def get_gemini_response(image):
-    # 무조건 가장 똑똑한 Pro 버전 + 창의성 0 (칼계산)
-    model = genai.GenerativeModel('gemini-1.5-pro')
+    # 👇 [수정 1] 모델 이름을 가장 최신 Pro 버전으로 명시합니다. (404 해결)
+    model = genai.GenerativeModel('gemini-1.5-pro-latest')
+    
+    # 정확도를 위해 창의성 0 설정
     generation_config = genai.types.GenerationConfig(temperature=0.0)
     
     response = model.generate_content(
@@ -69,17 +72,22 @@ if uploaded_file is not None and api_key:
         cols = st.columns(2) # 2열로 보여주기
         
         for i, (cropped_img, label) in enumerate(crops):
-            with cols[i % 2]:
-                st.image(cropped_img, caption=f"P{page_num+1} - {label}", use_column_width=True)
-                
-                with st.spinner(f"🔍 {label} 영역 정밀 분석 중..."):
-                    try:
-                        result = get_gemini_response(cropped_img)
-                        st.markdown(f"**🤖 분석 결과:**\n\n{result}")
-                        st.divider()
-                    except Exception as e:
-                        st.error(f"에러 발생: {e}")
-
+        with cols[i % 2]:
+            st.image(cropped_img, caption=f"P{page_num+1} - {label}", use_column_width=True)
+            
+            with st.spinner(f"🔍 {label} 정밀 분석 중... (Pro 모델 쿨타임 준수 중)"):
+                try:
+                    result = get_gemini_response(cropped_img)
+                    st.markdown(f"**🤖 분석 결과:**\n\n{result}")
+                    st.divider()
+                    
+                    # 👇 [핵심 추가] 무료 계정의 '1분당 2회' 제한을 피하기 위해 35초씩 쉽니다.
+                    # 조금 느리지만, 에러 없이 무조건 Pro로 풉니다.
+                    time.sleep(35) 
+                    
+                except Exception as e:
+                    st.error(f"에러 발생: {e}")
 elif not api_key:
 
     st.warning("왼쪽 사이드바에 API Key를 먼저 입력해주세요.")
+

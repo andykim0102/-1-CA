@@ -33,7 +33,7 @@ SYSTEM_PROMPT = """
 """
 
 def get_gemini_response(image):
-    # 표준 Pro 모델 이름으로 변경 (404 방지)
+    # [수정] 404 에러 방지를 위한 정식 모델명 사용
     model = genai.GenerativeModel('gemini-1.5-pro')
     
     # 정확도를 위해 창의성 0 설정
@@ -70,6 +70,7 @@ if uploaded_file is not None and api_key:
         
         cols = st.columns(2) # 2열 레이아웃
         
+        # [수정] IndentationError가 발생했던 구간 완벽 교정
         for i, (cropped_img, label) in enumerate(crops):
             with cols[i % 2]:
                 st.image(cropped_img, caption=f"P{page_num+1} - {label}", use_column_width=True)

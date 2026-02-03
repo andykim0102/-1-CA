@@ -40,7 +40,7 @@ SYSTEM_PROMPT = """
 
 def get_gemini_response(image):
     # [수정] 404 에러 방지를 위한 정식 모델명 사용
-    model = genai.GenerativeModel('gemini-1.5-pro')
+    model = genai.GenerativeModel('gemini-1.5-flash')
     
     # 정확도를 위해 창의성 0 설정
     generation_config = genai.types.GenerationConfig(temperature=0.0)
@@ -95,3 +95,4 @@ if uploaded_file is not None and api_key:
 
 elif not api_key:
     st.warning("왼쪽 사이드바에 API Key를 먼저 입력해주세요.")
+

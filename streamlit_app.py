@@ -33,8 +33,8 @@ SYSTEM_PROMPT = """
 """
 
 def get_gemini_response(image):
-    # 최신 Pro 모델 사용 (404 에러 방지용 latest 태그)
-    model = genai.GenerativeModel('gemini-1.5-pro-latest')
+    # 표준 Pro 모델 이름으로 변경 (404 방지)
+    model = genai.GenerativeModel('gemini-1.5-pro')
     
     # 정확도를 위해 창의성 0 설정
     generation_config = genai.types.GenerationConfig(temperature=0.0)
@@ -70,7 +70,6 @@ if uploaded_file is not None and api_key:
         
         cols = st.columns(2) # 2열 레이아웃
         
-        # 여기서 IndentationError가 났던 부분입니다. 줄 간격을 정확히 맞췄습니다.
         for i, (cropped_img, label) in enumerate(crops):
             with cols[i % 2]:
                 st.image(cropped_img, caption=f"P{page_num+1} - {label}", use_column_width=True)
